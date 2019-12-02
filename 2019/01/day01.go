@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"math"
 	"strconv"
 )
 
@@ -18,32 +17,28 @@ func main() {
 	fmt.Println("part 2:", part2(lines))
 }
 
-func part1(lines []string) (int) {
+func part1(lines []int) (int) {
 	var total = 0
-	for _, line := range lines {
-		var mass, _ = strconv.ParseFloat(line, 64)
-
-		total = total + int(math.Floor(mass / 3)) - 2
+	for _, mass := range lines {
+		total += (mass / 3) - 2
 	}
 	return total
 }
 
-func part2(lines []string) (int) {
+func part2(lines []int) (int) {
 	var total = 0
-	for _, line := range lines {
-		var mass, _ = strconv.ParseFloat(line, 64)
-
+	for _, mass := range lines {
 		for mass > 0 {
-			mass = math.Floor(mass / 3) - 2
+			mass = (mass / 3) - 2
 			if mass > 0 {
-				total = total + int(mass)
+				total += mass
 			}
 		}
 	}
 	return total
 }
 
-func readLines(filename string) ([]string, error) {
+func readLines(filename string) ([]int, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -52,11 +47,14 @@ func readLines(filename string) ([]string, error) {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 
-	var lines []string
+	var lines []int
 	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
+		i, err := strconv.Atoi(scanner.Text())
+		if err != nil {
+			return nil, err
+		}
+		lines = append(lines, i)
 	}
-
 	return lines, nil
 }
 
