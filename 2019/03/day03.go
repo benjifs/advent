@@ -6,8 +6,18 @@ import (
 	"os"
 	"strings"
 	"strconv"
+	"math"
 )
 const MaxInt = int(^uint(0) >> 1)
+
+type Point struct {
+	x, y, steps int
+}
+
+type Line struct {
+	a, b, c int
+	start, end Point
+}
 
 func main() {
 	lines, err := readInput("input.txt")
@@ -40,13 +50,13 @@ func createCoords(input []string) ([]Point) {
 			case "L":
 				offset.x = -1
 		}
-		distance, err := strconv.Atoi(val[1:])
+		dist, err := strconv.Atoi(val[1:])
 		if err != nil {
 			panic(err)
 		}
-		origin.x += offset.x * distance
-		origin.y += offset.y * distance
-		origin.steps += distance
+		origin.x += offset.x * dist
+		origin.y += offset.y * dist
+		origin.steps += dist
 
 		coords = append(coords, origin)
 	}
@@ -85,7 +95,7 @@ func makeLine(p1, p2 Point) (Line) {
 	return line
 }
 
-func calculateIntersects(path1 []Point, path2 []Point) ([]Point) {
+func calculateIntersects(path1, path2 []Point) ([]Point) {
 	var intersects []Point
 
 	for i := 0; i < len(path1) - 1; i++ {
@@ -102,34 +112,11 @@ func calculateIntersects(path1 []Point, path2 []Point) ([]Point) {
 	return intersects
 }
 
-func inLine(point Point, line Line) (bool) {
-	var minX, maxX, minY, maxY int
+func calculateSteps(intersect, point Point) (int) {
+	steps := point.steps
 
-	if line.start.x < line.end.x {
-		minX = line.start.x
-		maxX = line.end.x
-	} else {
-		maxX = line.start.x
-		minX = line.end.x
-	}
-	if line.start.y < line.end.y {
-		minY = line.start.y
-		maxY = line.end.y
-	} else {
-		maxY = line.start.y
-		minY = line.end.y
-	}
-
-	return minX <= point.x && point.x <= maxX && minY <= point.y && point.y <= maxY
-}
-
-func calculateSteps(intersect, p1, p2 Point) (int) {
-	steps := p1.steps + p2.steps
-
-	steps -= abs(p1.x - intersect.x)
-	steps -= abs(p2.x - intersect.x)
-	steps -= abs(p1.y - intersect.y)
-	steps -= abs(p2.y - intersect.y)
+	steps -= abs(point.x - intersect.x)
+	steps -= abs(point.y - intersect.y)
 
 	return steps
 }
@@ -143,22 +130,20 @@ func findIntersect(l1, l2 Line) (Point, bool) {
 		x := dx / d
 		y := dy / d
 		p := Point{x: x, y: y}
-		if inLine(p, l1) && inLine(p, l2) {
-			p.steps = calculateSteps(p, l1.end, l2.end)
+		if pointInLine(p, l1) && pointInLine(p, l2) {
+			p.steps = calculateSteps(p, l1.end) + calculateSteps(p, l2.end)
 			return p, true
 		}
 	}
 	return Point{}, false
 }
 
-
-type Point struct {
-	x, y, steps int
+func pointInLine(point Point, line Line) (bool) {
+	return distance(line.start, point) + distance(line.end, point) == distance(line.start, line.end)
 }
 
-type Line struct {
-	a, b, c int
-	start, end Point
+func distance(p1, p2 Point) (float64) {
+	return math.Sqrt(math.Pow(float64(p1.x - p2.x), 2) + math.Pow(float64(p1.y - p2.y), 2))
 }
 
 func abs(x int) (int) {
