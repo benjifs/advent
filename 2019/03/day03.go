@@ -21,7 +21,8 @@ func main() {
 		grids = append(grids, grid)
 	}
 
-	fmt.Printf("distance: %d\n", calculateDistance(grids[0].points, grids[1].points))
+	// fmt.Printf("distance: %d\n", calculateDistance(grids[0].points, grids[1].points))
+	fmt.Printf("distance: %d\n", calculateSteps(grids[0].points, grids[1].points))
 }
 
 func calculateDistance(path1 []Point, path2 []Point) (int) {
@@ -38,6 +39,21 @@ func calculateDistance(path1 []Point, path2 []Point) (int) {
 		}
 	}
 	return manhattan
+}
+
+func calculateSteps(path1 []Point, path2 []Point) (int) {
+	steps := 99999
+	for i, point1 := range path1 {
+		for j, point2 := range path2 {
+			if point1.x == point2.x && point1.y == point2.y {
+				tmp := i + j
+				if tmp != 0 && tmp < steps {
+					steps = tmp
+				}
+			}
+		}
+	}
+	return steps
 }
 
 func abs(x int) (int) {
@@ -58,10 +74,9 @@ type Grid struct {
 
 func createMap(input []string) (Grid) {
 	origin := Point{x: 0, y: 0}
-
 	var grid Grid
-	// grid := make([]Point, 0)
-	// grid = append(grid, origin)
+
+	grid.points = append(grid.points, origin)
 
 	for _, val := range input {
 		offset := Point{x: 0, y: 0}
