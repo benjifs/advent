@@ -16,3 +16,14 @@ func TestIsValid(t *testing.T) {
 	}
 }
 
+func TestHasDoubles(t *testing.T) {
+	input := []int{112233, 123444, 111122}
+	expected := []bool{true, false, true}
+
+	for i, password := range input {
+		if expected[i] != hasDoubles(password) {
+			t.Errorf("%d - expected %v", password, expected[i])
+		}
+	}
+}
+
