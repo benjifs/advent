@@ -15,8 +15,12 @@ func main() {
 	}
 	for _, line := range lines {
 		input, _ := inputToInt(line)
-		_, diagnostic := intCode(input, 5)
-		fmt.Println("Final diagnostic:", diagnostic)
+		
+		_, diagnostic := intCode(input, 1)
+		fmt.Println("pt1 diagnostic:", diagnostic)
+
+		_, diagnostic = intCode(input, 5)
+		fmt.Println("pt2 diagnostic:", diagnostic)
 	}
 }
 
@@ -36,7 +40,10 @@ func getParam(mem []int, index int, mode int) (int) {
 	return mem[index]
 }
 
-func intCode(mem []int, input int) ([]int, int) {
+func intCode(instructions []int, input int) ([]int, int) {
+	mem := make([]int, len(instructions))
+	copy(mem, instructions)
+
 	var diagnostic int
 
 	i := 0
