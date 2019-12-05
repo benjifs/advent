@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	// "errors"
 	"strconv"
 )
 
@@ -14,91 +13,98 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 	for _, line := range lines {
 		input, _ := inputToInt(line)
-
-		intCode(input, 1)
+		_, diagnostic := intCode(input, 5)
+		fmt.Println("Final diagnostic:", diagnostic)
 	}
 }
 
-func getOP(o int) ([]int) {
-	var out []int
+func getOP(code int) ([]int) {
+	op := code % 100
+	param1 := (code / 100) % 10
+	param2 := (code / 1000) % 10
+	param3 := (code / 10000) % 10
 
-	if o > 99 {
-		out = append(out, o % 100)
-		o = o / 100
-		for o > 9 {
-			out = append(out, o % 10)
-			o = o / 10
-		}
-		if o > 0 {
-			out = append(out, o)
-		}
-	} else {
-		out = append(out, o)
-	}
-
-	for i := len(out); i < 4; i++ {
-		out = append(out, 0)
-	}
-
-	return out
+	return []int{op, param1, param2, param3}
 }
 
-func intCode(input []int, in int) ([]int, error) {
-	mem := make([]int, len(input))
-	copy(mem, input)
+func getParam(mem []int, index int, mode int) (int) {
+	if mode == 0 {
+		return mem[mem[index]]
+	}
+	return mem[index]
+}
+
+func intCode(mem []int, input int) ([]int, int) {
+	var diagnostic int
 
 	i := 0
 	for i < len(mem) {
 		ops := getOP(mem[i])
-		op := ops[0]
 
+		op := ops[0]
 		if op == 99 {
 			break
 		}
 
-		if op == 1 || op == 2 {
-			a := mem[i + 1]
-			b := mem[i + 2]
-			c := mem[i + 3]
-
-			var param1, param2 int
-
-			if ops[1] == 0 {
-				param1 = mem[a]
-			} else {
-				param1 = a
-			}
-			if ops[2] == 0 {
-				param2 = mem[b]
-			} else {
-				param2 = b
-			}
-
-			if op == 1 {
-				mem[c] = param1 + param2
-			} else {
-				mem[c] = param1 * param2
-			}
-
-			i += 4
-		} else if op == 3 || op == 4 {
-			a := mem[i + 1]
-
-			if op == 3 {
-				mem[a] = in
-			} else {
-				fmt.Println(mem[a])
-			}
-
-			i += 2
-		} else {
-			panic("Invalid op")
+		param1 := getParam(mem, i + 1, ops[1])
+		switch op {
+			case 1:
+				param2 := getParam(mem, i + 2, ops[2])
+				out := getParam(mem, i + 3, 1)
+				mem[out] = param1 + param2
+				i += 4
+			case 2:
+				param2 := getParam(mem, i + 2, ops[2])
+				out := getParam(mem, i + 3, 1)
+				mem[out] = param1 * param2
+				i += 4
+			case 3:
+				out := getParam(mem, i + 1, 1)
+				mem[out] = input
+				i += 2
+			case 4:
+				diagnostic = mem[mem[i + 1]]
+				i += 2
+			case 5:
+				param2 := getParam(mem, i + 2, ops[2])
+				if param1 != 0 {
+					i = param2
+				} else {
+					i += 3
+				}
+			case 6:
+				param2 := getParam(mem, i + 2, ops[2])
+				if param1 == 0 {
+					i = param2
+				} else {
+					i += 3
+				}
+			case 7:
+				param2 := getParam(mem, i + 2, ops[2])
+				out := getParam(mem, i + 3, 1)
+				if param1 < param2 {
+					mem[out] = 1
+				} else {
+					mem[out] = 0
+				}
+				i += 4
+			case 8:
+				param2 := getParam(mem, i + 2, ops[2])
+				out := getParam(mem, i + 3, 1)
+				if param1 == param2 {
+					mem[out] = 1
+				} else {
+					mem[out] = 0
+				}
+				i += 4
+			default:
+				fmt.Println(ops)
+				panic("Invalid op")
 		}
 	}
-	return mem, nil
+	return mem, diagnostic
 }
 
 func readInput(filename string) ([]string, error) {
@@ -129,4 +135,3 @@ func inputToInt(input string) ([]int, error) {
 	}
 	return out, nil
 }
-
