@@ -18,63 +18,14 @@ func TestSliceInput(t *testing.T) {
 	}
 }
 
-func TestDay02_sample1(t *testing.T) {
-	input := []int{1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50}
-	output := 3500
-	actual, err := intCode(input)
-	if err != nil {
-		panic(err)
-	}
-	if output != actual[0] {
-		t.Errorf("Expected: %d - Actual: %d", output, actual)
+func TestGetOP(t *testing.T) {
+	input := []int{1102, 99, 2, 0001}
+	output := []int{2, 99, 2, 1}
+
+	for i, in := range input {
+		op := getOP(in)
+		if op[0] != output[i] {
+			t.Errorf("Expected: %d - Actual: %d\n", output[i], op[0])
+		}
 	}
 }
-
-func TestDay02_sample2(t *testing.T) {
-	input := []int{1, 0, 0, 0, 99}
-	output := 2
-	actual, err := intCode(input)
-	if err != nil {
-		panic(err)
-	}
-	if output != actual[0] {
-		t.Errorf("Expected: %d - Actual: %d", output, actual)
-	}
-}
-
-func TestDay02_sample3(t *testing.T) {
-	input := []int{2, 3, 0, 3, 99}
-	output := 2
-	actual, err := intCode(input)
-	if err != nil {
-		panic(err)
-	}
-	if output != actual[0] {
-		t.Errorf("Expected: %d - Actual: %d", output, actual)
-	}
-}
-
-func TestDay02_sample4(t *testing.T) {
-	input := []int{2, 4, 4, 5, 99, 0}
-	output := 2
-	actual, err := intCode(input)
-	if err != nil {
-		panic(err)
-	}
-	if output != actual[0] {
-		t.Errorf("Expected: %d - Actual: %d", output, actual)
-	}
-}
-
-func TestDay02_sample5(t *testing.T) {
-	input := []int{1, 1, 1, 4, 99, 5, 6, 0, 99}
-	output := 30
-	actual, err := intCode(input)
-	if err != nil {
-		panic(err)
-	}
-	if output != actual[0] {
-		t.Errorf("Expected: %d - Actual: %d", output, actual)
-	}
-}
-
