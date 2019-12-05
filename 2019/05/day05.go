@@ -51,11 +51,9 @@ func intCode(instructions []int, input int) ([]int, int) {
 		ops := getOP(mem[i])
 
 		op := ops[0]
-		if op == 99 {
-			break
-		}
-
 		switch op {
+			case 99:
+				return mem, diagnostic
 			case 1:
 				param1 := getParam(mem, i + 1, ops[1])
 				param2 := getParam(mem, i + 2, ops[2])
