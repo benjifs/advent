@@ -55,14 +55,15 @@ func intCode(instructions []int, input int) ([]int, int) {
 			break
 		}
 
-		param1 := getParam(mem, i + 1, ops[1])
 		switch op {
 			case 1:
+				param1 := getParam(mem, i + 1, ops[1])
 				param2 := getParam(mem, i + 2, ops[2])
 				out := getParam(mem, i + 3, 1)
 				mem[out] = param1 + param2
 				i += 4
 			case 2:
+				param1 := getParam(mem, i + 1, ops[1])
 				param2 := getParam(mem, i + 2, ops[2])
 				out := getParam(mem, i + 3, 1)
 				mem[out] = param1 * param2
@@ -72,9 +73,11 @@ func intCode(instructions []int, input int) ([]int, int) {
 				mem[out] = input
 				i += 2
 			case 4:
-				diagnostic = mem[mem[i + 1]]
+				out := getParam(mem, i + 1, ops[1])
+				diagnostic = out
 				i += 2
 			case 5:
+				param1 := getParam(mem, i + 1, ops[1])
 				param2 := getParam(mem, i + 2, ops[2])
 				if param1 != 0 {
 					i = param2
@@ -82,6 +85,7 @@ func intCode(instructions []int, input int) ([]int, int) {
 					i += 3
 				}
 			case 6:
+				param1 := getParam(mem, i + 1, ops[1])
 				param2 := getParam(mem, i + 2, ops[2])
 				if param1 == 0 {
 					i = param2
@@ -89,6 +93,7 @@ func intCode(instructions []int, input int) ([]int, int) {
 					i += 3
 				}
 			case 7:
+				param1 := getParam(mem, i + 1, ops[1])
 				param2 := getParam(mem, i + 2, ops[2])
 				out := getParam(mem, i + 3, 1)
 				if param1 < param2 {
@@ -98,6 +103,7 @@ func intCode(instructions []int, input int) ([]int, int) {
 				}
 				i += 4
 			case 8:
+				param1 := getParam(mem, i + 1, ops[1])
 				param2 := getParam(mem, i + 2, ops[2])
 				out := getParam(mem, i + 3, 1)
 				if param1 == param2 {
