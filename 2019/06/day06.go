@@ -44,18 +44,14 @@ func getRoute(start string, orbitMap map[string]string) ([]string) {
 }
 
 func getClosestPath(path1, path2 []string) (int) {
-	distance := 0
-	for _, val1 := range path1 {
-		dist2 := 0
-		for _, val2 := range path2 {
+	for i, val1 := range path1 {
+		for j, val2 := range path2 {
 			if val1 == val2 {
-				return distance + dist2
+				return i + j
 			}
-			dist2++
 		}
-		distance++
 	}
-	return distance
+	return 0
 }
 
 func numOrbits(orbitMap map[string]string) (int) {
