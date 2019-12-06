@@ -9,43 +9,59 @@ import (
 
 func main() {
 	lines, err := readInput("input.txt")
-	// lines, err := readInput("test_input.txt")
 	if err != nil {
 		panic(err)
 	}
 
-	planets := make(map[string][]string)
+	orbitMap := make(map[string]string)
 	for _, line := range lines {
-		values := strings.Split(line, ")")
-
-		var obj []string
-		if val, ok := planets[values[1]]; ok {
-			obj = val
-		}
-
-		obj = append(obj, values[0])
-		planets[values[1]] = obj
+		vals := strings.Split(line, ")")
+		orbitMap[vals[1]] = vals[0]
 	}
 
-
-	i := 0
-	for k, _ := range planets {
-		tmp := maptree(k, planets)
-		fmt.Println(k, tmp)
-
-		i+= tmp
+	distance := 0
+	for k, _ := range orbitMap {
+		distance += getDistance(k, orbitMap)
 	}
-	fmt.Println(i)
+	fmt.Println("pt1:", distance)
+	fmt.Println("pt2:", getClosestPath(getRoute("YOU", orbitMap), getRoute("SAN", orbitMap)))
 }
 
-func maptree(name string, planets map[string][]string) (int) {
-	if len(planets[name]) == 0 {
+func getRoute(start string, orbitMap map[string]string) ([]string) {
+	var route []string
+
+	loc := orbitMap[start]
+	for {
+		if loc == "" || loc == "COM" {
+			break
+		}
+		route = append(route, loc)
+		loc = orbitMap[loc]
+	}
+
+	return route
+}
+
+func getClosestPath(path1, path2 []string) (int) {
+	distance := 0
+	for _, val1 := range path1 {
+		dist2 := 0
+		for _, val2 := range path2 {
+			if val1 == val2 {
+				return distance + dist2
+			}
+			dist2++
+		}
+		distance++
+	}
+	return distance
+}
+
+func getDistance(loc string, orbitMap map[string]string) (int) {
+	if orbitMap[loc] == "" {
 		return 0
 	}
-	for _, o := range planets[name] {
-		return maptree(o, planets) + 1
-	}
-	return 0
+	return getDistance(orbitMap[loc], orbitMap) + 1
 }
 
 func readInput(filename string) ([]string, error) {
