@@ -33,7 +33,7 @@ func getRoute(start string, orbitMap map[string]string) ([]string) {
 
 	loc := orbitMap[start]
 	for {
-		if loc == "" || loc == "COM" {
+		if loc == "COM" {
 			break
 		}
 		route = append(route, loc)
