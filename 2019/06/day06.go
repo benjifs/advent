@@ -13,18 +13,19 @@ func main() {
 		panic(err)
 	}
 
+	orbitMap := makeOrbitMap(lines)
+
+	fmt.Println("pt1:", numOrbits(orbitMap))
+	fmt.Println("pt2:", getClosestPath(getRoute("YOU", orbitMap), getRoute("SAN", orbitMap)))
+}
+
+func makeOrbitMap(lines []string) (map[string]string) {
 	orbitMap := make(map[string]string)
 	for _, line := range lines {
 		vals := strings.Split(line, ")")
 		orbitMap[vals[1]] = vals[0]
 	}
-
-	distance := 0
-	for k, _ := range orbitMap {
-		distance += getDistance(k, orbitMap)
-	}
-	fmt.Println("pt1:", distance)
-	fmt.Println("pt2:", getClosestPath(getRoute("YOU", orbitMap), getRoute("SAN", orbitMap)))
+	return orbitMap
 }
 
 func getRoute(start string, orbitMap map[string]string) ([]string) {
@@ -57,11 +58,19 @@ func getClosestPath(path1, path2 []string) (int) {
 	return distance
 }
 
-func getDistance(loc string, orbitMap map[string]string) (int) {
+func numOrbits(orbitMap map[string]string) (int) {
+	distance := 0
+	for k, _ := range orbitMap {
+		distance += getOrbits(k, orbitMap)
+	}
+	return distance
+}
+
+func getOrbits(loc string, orbitMap map[string]string) (int) {
 	if orbitMap[loc] == "" {
 		return 0
 	}
-	return getDistance(orbitMap[loc], orbitMap) + 1
+	return getOrbits(orbitMap[loc], orbitMap) + 1
 }
 
 func readInput(filename string) ([]string, error) {
