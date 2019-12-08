@@ -24,14 +24,47 @@ func main() {
 		}
 	}
 	fmt.Println("pt1:", best)
+
+	best = -1
+	seq2 := []int{5, 6, 7, 8, 9}
+	for _, phaseSettings := range getPhaseSettings(seq2) {
+		out := runWithPhaseSetting2(input, phaseSettings)
+		if best < out {
+			best = out
+		}
+	}
+	fmt.Println("pt2:", best)
+}
+
+func runWithPhaseSetting2(input, phaseSettings []int) (int) {
+	signal := 0
+
+	var amps []Amplifier
+	for _, phaseSetting := range phaseSettings {
+		amps = append(amps, Amplifier{mem: input, input: []int{phaseSetting}})
+	}
+
+	i := 0
+	for {
+		amps[i].input = append(amps[i].input, signal)
+		amps[i] = intCode(amps[i])
+		signal = amps[i].signal
+
+		if i == 4 && amps[i].halt {
+			break
+		}
+		i = (i + 1) % len(amps)
+	}
+	return signal
 }
 
 func runWithPhaseSetting(input, phaseSettings []int) (int) {
-	out := 0
+	signal := 0
 	for _, phaseSetting := range phaseSettings {
-		_, out = intCode(input, []int{phaseSetting, out})
+		amp := intCode(Amplifier{mem: input, input: []int{phaseSetting, signal}})
+		signal = amp.signal
 	}
-	return out
+	return signal
 }
 
 func getPhaseSettings(seq []int) (result [][]int) {
@@ -66,21 +99,28 @@ func getParam(mem []int, index int, mode int) (int) {
 	return mem[index]
 }
 
-func intCode(instructions []int, input []int) ([]int, int) {
-	mem := make([]int, len(instructions))
-	copy(mem, instructions)
+type Amplifier struct {
+	mem []int
+	position int
+	signal int
+	input []int
+	halt bool
+}
 
+func intCode(amp Amplifier) (Amplifier) {
 	var diagnostic int
 
-	i := 0
-	j := 0
+	i := amp.position
+	mem := amp.mem
+	input := amp.input
+
 	for i < len(mem) {
 		ops := getOP(mem[i])
 
 		op := ops[0]
 		switch op {
 			case 99:
-				return mem, diagnostic
+				return Amplifier{mem: mem, signal: diagnostic, position: i, input: amp.input, halt: true}
 			case 1:
 				param1 := getParam(mem, i + 1, ops[1])
 				param2 := getParam(mem, i + 2, ops[2])
@@ -94,9 +134,11 @@ func intCode(instructions []int, input []int) ([]int, int) {
 				mem[out] = param1 * param2
 				i += 4
 			case 3:
+				if len(input) == 0 {
+					return Amplifier{mem: mem, signal: diagnostic, position: i, input: input}
+				}
 				out := getParam(mem, i + 1, 1)
-				mem[out] = input[j]
-				j++
+				mem[out], input = input[0], input[1:]
 				i += 2
 			case 4:
 				out := getParam(mem, i + 1, ops[1])
@@ -143,7 +185,7 @@ func intCode(instructions []int, input []int) ([]int, int) {
 				panic("Invalid op")
 		}
 	}
-	return mem, diagnostic
+	return Amplifier{mem: mem, signal: diagnostic, position: i, input: amp.input, halt: true}
 }
 
 func readInput(filename string) ([]string, error) {
