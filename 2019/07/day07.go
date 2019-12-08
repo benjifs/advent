@@ -108,11 +108,10 @@ type Amplifier struct {
 }
 
 func intCode(amp Amplifier) (Amplifier) {
-	var diagnostic int
-
 	i := amp.position
 	mem := amp.mem
 	input := amp.input
+	signal := amp.signal
 
 	for i < len(mem) {
 		ops := getOP(mem[i])
@@ -120,7 +119,7 @@ func intCode(amp Amplifier) (Amplifier) {
 		op := ops[0]
 		switch op {
 			case 99:
-				return Amplifier{mem: mem, signal: diagnostic, position: i, input: amp.input, halt: true}
+				return Amplifier{mem: mem, signal: signal, position: i, input: input, halt: true}
 			case 1:
 				param1 := getParam(mem, i + 1, ops[1])
 				param2 := getParam(mem, i + 2, ops[2])
@@ -134,16 +133,13 @@ func intCode(amp Amplifier) (Amplifier) {
 				mem[out] = param1 * param2
 				i += 4
 			case 3:
-				if len(input) == 0 {
-					return Amplifier{mem: mem, signal: diagnostic, position: i, input: input}
-				}
 				out := getParam(mem, i + 1, 1)
 				mem[out], input = input[0], input[1:]
 				i += 2
 			case 4:
 				out := getParam(mem, i + 1, ops[1])
-				diagnostic = out
-				i += 2
+				signal = out
+				return Amplifier{mem: mem, signal: signal, position: i + 2, input: input}
 			case 5:
 				param1 := getParam(mem, i + 1, ops[1])
 				param2 := getParam(mem, i + 2, ops[2])
@@ -185,7 +181,7 @@ func intCode(amp Amplifier) (Amplifier) {
 				panic("Invalid op")
 		}
 	}
-	return Amplifier{mem: mem, signal: diagnostic, position: i, input: amp.input, halt: true}
+	return Amplifier{mem: mem, signal: signal, position: i, input: input, halt: true}
 }
 
 func readInput(filename string) ([]string, error) {
