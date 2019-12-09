@@ -18,14 +18,13 @@ func main() {
 	input, _ := inputToInt(lines[0])
 
 	img := generateImage(input, 25, 6)
-	layer := getFewestZeroes(img)
-	fmt.Println(checkLayer(img.layers[layer]))
-
-
+	fmt.Println(checkLayer(img))
 }
 
 type Layer struct {
 	grid [][]int
+	
+	count [3]int
 }
 
 type Image struct {
@@ -33,38 +32,27 @@ type Image struct {
 	width, height int
 }
 
-func checkLayer(layer Layer) (int) {
-	countOne, countTwo := 0, 0
-	for h := 0; h < len(layer.grid); h++ {
-		for w := 0; w < len(layer.grid[h]); w++ {
-			if layer.grid[h][w] == 1 {
-				countOne++
-			} else if layer.grid[h][w] == 2 {
-				countTwo++
-			}
-		}
-	}
-	return countOne * countTwo
-}
-
-func getFewestZeroes(img Image) (int) {
-	zeroLayer := 0
+func checkLayer(img Image) (int) {
+	res := 0
 	zeroes := MaxInt
-	for l, layer := range img.layers {
-		count := 0
+	for _, layer := range img.layers {
 		for h := 0; h < len(layer.grid); h++ {
 			for w := 0; w < len(layer.grid[h]); w++ {
 				if layer.grid[h][w] == 0 {
-					count++
+					layer.count[0]++
+				} else if layer.grid[h][w] == 1 {
+					layer.count[1]++
+				} else if layer.grid[h][w] == 2 {
+					layer.count[2]++
 				}
 			}
 		}
-		if count < zeroes {
-			zeroLayer = l
-			zeroes = count
+		if layer.count[0] < zeroes {
+			zeroes = layer.count[0]
+			res = layer.count[1] * layer.count[2]
 		}
 	}
-	return zeroLayer
+	return res
 }
 
 func generateLayer(pixels []int, width, height int) (Layer) {
