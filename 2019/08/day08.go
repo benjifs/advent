@@ -19,17 +19,43 @@ func main() {
 
 	img := generateImage(input, 25, 6)
 	fmt.Println(checkLayer(img))
+
+	img.Print()
 }
 
 type Layer struct {
 	grid [][]int
-	
 	count [3]int
 }
 
 type Image struct {
 	layers []Layer
 	width, height int
+}
+
+func (img Image) Print() {
+	final := img.layers[len(img.layers) - 1]
+
+	for i := len(img.layers) - 2; i >= 0; i-- {
+		layer := img.layers[i]
+		for h := 0; h < len(layer.grid); h++ {
+			for w := 0; w < len(layer.grid[h]); w++ {
+				if layer.grid[h][w] != final.grid[h][w] && layer.grid[h][w] != 2 {
+					final.grid[h][w] = layer.grid[h][w]
+				}
+			}
+		}
+	}
+	for h := 0; h < len(final.grid); h++ {
+		for w := 0; w < len(final.grid[h]); w++ {
+			if final.grid[h][w] == 1 {
+				fmt.Printf("█")
+			} else {
+				fmt.Printf(" ")
+			}
+		}
+		fmt.Printf("\n")
+	}
 }
 
 func checkLayer(img Image) (int) {
