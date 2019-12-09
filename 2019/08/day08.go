@@ -7,6 +7,8 @@ import (
 	"strconv"
 )
 
+const MaxInt = int(^uint(0) >> 1)
+
 func main() {
 	lines, err := readInput("input.txt")
 	if err != nil {
@@ -14,95 +16,80 @@ func main() {
 	}
 
 	input, _ := inputToInt(lines[0])
-	fmt.Println("pt1:", getFewestZeroes(input, 25, 6))
+
+	img := generateImage(input, 25, 6)
+	layer := getFewestZeroes(img)
+	fmt.Println(checkLayer(img.layers[layer]))
+
+
 }
 
-func getFewestZeroes(input []int, width, height int) (int) {
-	var layers [][]int
+type Layer struct {
+	grid [][]int
+}
 
-	// layers := make([][]int, height)
+type Image struct {
+	layers []Layer
+	width, height int
+}
 
-	// for i := range layers {
-	// 	layers[i] = make([]int, width)
-	// }
-
-	// j := 0
-	// for h := 0; h < height; h++ {
-	// 	for w := 0; w < width; w++ {
-	// 		layers[h][w] = input[j]
-	// 		j++
-	// 	}
-	// }
-
-	j := 0
-	minLayer, minCount := 0, 99999999
-	zeroes := 0
-	layers = append(layers, []int{})
-	for i, vals := range input {
-		if vals == 0 {
-			zeroes++
-		}
-		layers[j] = append(layers[j], vals)
-
-		fmt.Println(i)
-
-		if (i + 1) % (width * height) == 0 {
-			layers = append(layers, []int{})
-			if zeroes < minCount {
-				minLayer = j
-				minCount = zeroes
+func checkLayer(layer Layer) (int) {
+	countOne, countTwo := 0, 0
+	for h := 0; h < len(layer.grid); h++ {
+		for w := 0; w < len(layer.grid[h]); w++ {
+			if layer.grid[h][w] == 1 {
+				countOne++
+			} else if layer.grid[h][w] == 2 {
+				countTwo++
 			}
-			fmt.Println(j, zeroes)
-			j++
-			zeroes = 0
 		}
 	}
-
-
-	countOne := 0
-	countTwo := 0
-	for _, pixel := range layers[minLayer] {
-		if pixel == 1 {
-			countOne++
-		}
-		if pixel == 2 {
-			countTwo++
-		}
-	}
-
 	return countOne * countTwo
+}
 
-	// minLayer, minCount := 0, 99999
-	// for i, layer := range layers {
-	// 	zeroes := 0
-	// 	for _, pixel := range layer {
-	// 		if pixel == 0 {
-	// 			zeroes++
-	// 		}
-	// 	}
+func getFewestZeroes(img Image) (int) {
+	zeroLayer := 0
+	zeroes := MaxInt
+	for l, layer := range img.layers {
+		count := 0
+		for h := 0; h < len(layer.grid); h++ {
+			for w := 0; w < len(layer.grid[h]); w++ {
+				if layer.grid[h][w] == 0 {
+					count++
+				}
+			}
+		}
+		if count < zeroes {
+			zeroLayer = l
+			zeroes = count
+		}
+	}
+	return zeroLayer
+}
 
-	// 	if zeroes < minCount {
-	// 		minLayer = i
-	// 		minCount = zeroes
-	// 	}
-	// }
+func generateLayer(pixels []int, width, height int) (Layer) {
+	layer := Layer{}
 
-	// fmt.Println("minlayer", minLayer, minCount)
+	for h := 0; h < height; h++ {
+		layer.grid = append(layer.grid, []int{})
+		for w := 0; w < width; w++ {
+			layer.grid[h] = append(layer.grid[h], pixels[h * width + w])
+		}
+	}
+	return layer
+}
 
-	// countOne := 0
-	// countTwo := 0
-	// for _, pixel := range layers[minLayer] {
-	// 	if pixel == 1 {
-	// 		countOne++
-	// 	}
-	// 	if pixel == 2 {
-	// 		countTwo++
-	// 	}
-	// }
+func generateImage(pixels []int, width, height int) (Image) {
+	img := Image{width: width, height: height}
 
-	// fmt.Println(layers)
+	for len(pixels) > 0 {
+		layer := pixels[:(width * height)]
+		pixels = pixels[(width * height):]
 
-	// return countOne * countTwo
+		img.layers = append(img.layers, generateLayer(layer, width, height))
+	}
+
+	return img
 }
 
 func readInput(filename string) ([]string, error) {
