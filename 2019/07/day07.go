@@ -41,7 +41,9 @@ func runWithPhaseSetting2(input, phaseSettings []int) (int) {
 
 	var amps []Amplifier
 	for _, phaseSetting := range phaseSettings {
-		amps = append(amps, Amplifier{mem: input, input: []int{phaseSetting}})
+		tmp := make([]int, len(input))
+		copy(tmp, input)
+		amps = append(amps, Amplifier{mem: tmp, input: []int{phaseSetting}})
 	}
 
 	i := 0
@@ -94,9 +96,9 @@ func getOP(code int) ([]int) {
 
 func getParam(mem []int, index int, mode int) (int) {
 	if mode == 0 {
-		return mem[mem[index]]
+		return mem[index]
 	}
-	return mem[index]
+	return index
 }
 
 type Amplifier struct {
@@ -123,44 +125,44 @@ func intCode(amp Amplifier) (Amplifier) {
 			case 1:
 				param1 := getParam(mem, i + 1, ops[1])
 				param2 := getParam(mem, i + 2, ops[2])
-				out := getParam(mem, i + 3, 1)
-				mem[out] = param1 + param2
+				out := getParam(mem, i + 3, ops[3])
+				mem[out] = mem[param1] + mem[param2]
 				i += 4
 			case 2:
 				param1 := getParam(mem, i + 1, ops[1])
 				param2 := getParam(mem, i + 2, ops[2])
-				out := getParam(mem, i + 3, 1)
-				mem[out] = param1 * param2
+				out := getParam(mem, i + 3, ops[3])
+				mem[out] = mem[param1] * mem[param2]
 				i += 4
 			case 3:
-				out := getParam(mem, i + 1, 1)
+				out := getParam(mem, i + 1, ops[1])
 				mem[out], input = input[0], input[1:]
 				i += 2
 			case 4:
 				out := getParam(mem, i + 1, ops[1])
-				signal = out
+				signal = mem[out]
 				return Amplifier{mem: mem, signal: signal, position: i + 2, input: input}
 			case 5:
 				param1 := getParam(mem, i + 1, ops[1])
 				param2 := getParam(mem, i + 2, ops[2])
-				if param1 != 0 {
-					i = param2
+				if mem[param1] != 0 {
+					i = mem[param2]
 				} else {
 					i += 3
 				}
 			case 6:
 				param1 := getParam(mem, i + 1, ops[1])
 				param2 := getParam(mem, i + 2, ops[2])
-				if param1 == 0 {
-					i = param2
+				if mem[param1] == 0 {
+					i = mem[param2]
 				} else {
 					i += 3
 				}
 			case 7:
 				param1 := getParam(mem, i + 1, ops[1])
 				param2 := getParam(mem, i + 2, ops[2])
-				out := getParam(mem, i + 3, 1)
-				if param1 < param2 {
+				out := getParam(mem, i + 3, ops[3])
+				if mem[param1] < mem[param2] {
 					mem[out] = 1
 				} else {
 					mem[out] = 0
@@ -169,8 +171,8 @@ func intCode(amp Amplifier) (Amplifier) {
 			case 8:
 				param1 := getParam(mem, i + 1, ops[1])
 				param2 := getParam(mem, i + 2, ops[2])
-				out := getParam(mem, i + 3, 1)
-				if param1 == param2 {
+				out := getParam(mem, i + 3, ops[3])
+				if mem[param1] == mem[param2] {
 					mem[out] = 1
 				} else {
 					mem[out] = 0
