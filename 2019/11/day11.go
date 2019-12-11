@@ -8,6 +8,10 @@ import (
 	"strconv"
 )
 
+type Point struct {
+	x, y int
+}
+
 func main() {
 	lines, err := readInput("input.txt")
 	if err != nil {
@@ -18,48 +22,46 @@ func main() {
 	for i := 0; i < 1000; i++ {
 		input = append(input, 0)
 	}
-	// amp := intCode(Amplifier{mem: input, input: []int{1}})
-	// fmt.Println("pt1:", amp.signal)
 
-	// amp = intCode(Amplifier{mem: input, input: []int{2}})
-	// fmt.Println("pt2:", amp.signal)
+	grid := paint(input, 0)
+	fmt.Println("pt1:", len(grid))
 
-	run(input)
+	grid = paint(input, 1)
+	drawGrid(grid)
 }
 
-type Point struct {
-	x, y int
-	color int
-	painted bool
+func drawGrid(grid map[Point]int) {
+	for y := -50; y < 50; y++ {
+		for x := -50; x < 50; x++ {
+			if val, ok := grid[Point{x: x, y: y}]; ok {
+				if val == 0 {
+					fmt.Printf(" ")
+				} else {
+					fmt.Printf("#")
+				}
+			} else {
+				fmt.Printf(" ")
+			}
+		}
+		fmt.Printf("\n")
+	}
 }
 
-type Robot struct {
-	direction int // 0 UP, 1 RIGHT, 2, DOWN, 3 LEFT
-	location Point
-	points []Point
-}
+func paint(input []int, startColor int) (map[Point]int) {
+	robot := 0
+	point := Point{x: 0, y: 0}
+	amp := Amplifier{mem: input}
 
-func run(input []int) {
-	point := Point{x: 0, y: 0, color: 0, painted: false}
-
-	robot := Robot{location: point}
-
-	amp := Amplifier{mem: input, input: []int{}}
-
-	colors := make(map[string]int)
-	painted := make(map[string]bool)
+	grid := make(map[Point]int)
+	grid[point] = startColor
 	for {
 		if amp.halt {
 			break
 		}
-		key := strconv.Itoa(point.x) + ":" + strconv.Itoa(point.y)
 
 		signal := 0
-		if val, ok := colors[key]; ok {
-			signal = val
-		}
-		if _, ok := painted[key]; !ok {
-			painted[key] = false
+		if c, ok := grid[point]; ok {
+			signal = c
 		}
 
 		amp.input = append(amp.input, signal)
@@ -68,38 +70,32 @@ func run(input []int) {
 		amp = intCode(amp)
 		direction := amp.signal
 
-		if val, ok := colors[key]; ok {
-			if val != color {
-				painted[key] = true
-			}
-		}
-		colors[key] = color
+		grid[point] = color
 
 		if direction == 0 {
-			robot.direction--
-			if robot.direction < 0 {
-				robot.direction = 3
+			robot--
+			if robot < 0 {
+				robot = 3
 			}
 		} else if direction == 1 {
-			robot.direction++
-			if robot.direction > 3 {
-				robot.direction = 0
+			robot++
+			if robot > 3 {
+				robot = 0
 			}
 		}
-
-		if robot.direction == 0 {
+		if robot == 0 {
 			point.y++
-		} else if robot.direction == 1 {
+		} else if robot == 1 {
 			point.x++
-		} else if robot.direction == 2 {
+		} else if robot == 2 {
 			point.y--
-		} else if robot.direction == 3 {
+		} else if robot == 3 {
 			point.x--
 		}
 	}
-
-	fmt.Println(len(painted))
+	return grid
 }
+
 
 func getOP(code int) ([]int) {
 	op := code % 100
