@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"os"
 	"math"
+	"sort"
 )
 
 type asteroid struct {
 	x, y int
-	count int
+	d int
+	targets map[float64][]asteroid
 }
 
 func main() {
@@ -20,37 +22,62 @@ func main() {
 
 	asteroids := initAsteroids(lines)
 	best := calculateHits(asteroids)
-	fmt.Printf("pt1: (%d, %d) -> %d\n", best.x, best.y, best.count)
+	fmt.Printf("pt1: (%d, %d) -> %d\n", best.x, best.y, len(best.targets))
+
+	destroyed := activateLaser(best)
+	fmt.Println("pt2:", destroyed[199].x * 100 + destroyed[199].y)
 }
 
 func (a asteroid) distance(b asteroid) (int) {
 	return int(math.Abs(float64(a.x - b.x)) + math.Abs(float64(a.y - b.y)))
 }
 
-func (a asteroid) angle(b asteroid) float64 {
-	return math.Atan2(float64(a.x - b.x), float64(a.y - b.y))
+func (a asteroid) angle(b asteroid) (float64) {
+	angle := math.Atan2(float64(a.x - b.x), float64(b.y - a.y))
+	angle = angle + math.Pi
+	if angle == math.Pi * 2 {
+		angle = 0
+	}
+	return angle
+}
+
+func activateLaser(a asteroid) (destroyed []asteroid) {
+	var keys []float64
+	for k := range a.targets {
+		keys = append(keys, k)
+
+		sort.Slice(a.targets[k], func(i, j int) (bool) {
+			return a.targets[k][i].d < a.targets[k][j].d
+		})
+	}
+	sort.Float64s(keys)
+
+	for len(destroyed) != len(a.targets) {
+		for _, k := range keys {
+			if len(a.targets[k]) == 0 {
+				delete(a.targets, k)
+				continue
+			}
+			destroyed = append(destroyed, a.targets[k][0])
+			a.targets[k] = a.targets[k][1:]
+		}
+	}
+	return destroyed
 }
 
 func calculateHits(asteroids []asteroid) (best asteroid) {
 	for i, a := range asteroids {
-		sight := make(map[float64]int)
+		targets := make(map[float64][]asteroid)
 		for j, b := range asteroids {
 			if i == j {
 				continue
 			}
 			angle := a.angle(b)
-			distance := a.distance(b)
-
-			if val, ok := sight[angle]; ok {
-				if val > distance {
-					sight[angle] = distance
-				}
-			} else {
-				sight[angle] = distance
-			}
+			b.d = a.distance(b)
+			targets[angle] = append(targets[angle], b)
 		}
-		a.count = len(sight)
-		if best.count < a.count {
+		a.targets = targets
+		if len(best.targets) < len(a.targets) {
 			best = a
 		}
 	}
@@ -81,7 +108,6 @@ func readInput(filename string) ([]string, error) {
 	for scanner.Scan() {
 		input = append(input, scanner.Text())
 	}
-
 	return input, nil
 }
 
