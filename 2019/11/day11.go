@@ -8,6 +8,9 @@ import (
 	"strconv"
 )
 
+const MaxInt = int(^uint(0) >> 1)
+const MinInt = -MaxInt - 1
+
 type Point struct {
 	x, y int
 }
@@ -23,22 +26,33 @@ func main() {
 		input = append(input, 0)
 	}
 
-	grid := paint(input, 0)
-	fmt.Println("pt1:", len(grid))
-
-	grid = paint(input, 1)
-	drawGrid(grid)
+	fmt.Println("pt1:", len(paint(input, 0)))
+	drawGrid(paint(input, 1))
 }
 
 func drawGrid(grid map[Point]int) {
-	for y := -50; y < 50; y++ {
-		for x := -50; x < 50; x++ {
-			if val, ok := grid[Point{x: x, y: y}]; ok {
-				if val == 0 {
-					fmt.Printf(" ")
-				} else {
-					fmt.Printf("#")
-				}
+	minX, maxX := MaxInt, MinInt
+	minY, maxY := MaxInt, MinInt
+
+	for point, _ := range grid {
+		if point.x < minX {
+			minX = point.x
+		}
+		if point.x > maxX {
+			maxX = point.x
+		}
+		if point.y < minY {
+			minY = point.y
+		}
+		if point.y > maxY {
+			maxY = point.y
+		}
+	}
+
+	for y := minY; y <= maxY; y++ {
+		for x := minX; x <= maxX; x++ {
+			if grid[Point{x, y}] == 1 {
+				fmt.Printf("█")
 			} else {
 				fmt.Printf(" ")
 			}
@@ -84,18 +98,17 @@ func paint(input []int, startColor int) (map[Point]int) {
 			}
 		}
 		if robot == 0 {
-			point.y++
+			point.y--
 		} else if robot == 1 {
 			point.x++
 		} else if robot == 2 {
-			point.y--
+			point.y++
 		} else if robot == 3 {
 			point.x--
 		}
 	}
 	return grid
 }
-
 
 func getOP(code int) ([]int) {
 	op := code % 100
@@ -122,6 +135,7 @@ type Amplifier struct {
 	signal int
 	input []int
 	halt bool
+	relativeBase int
 }
 
 func intCode(amp Amplifier) (Amplifier) {
@@ -129,8 +143,7 @@ func intCode(amp Amplifier) (Amplifier) {
 	mem := amp.mem
 	input := amp.input
 	signal := amp.signal
-
-	relativeBase := 0
+	relativeBase := amp.relativeBase
 
 	for i < len(mem) {
 		ops := getOP(mem[i])
@@ -138,7 +151,7 @@ func intCode(amp Amplifier) (Amplifier) {
 		op := ops[0]
 		switch op {
 			case 99:
-				return Amplifier{mem: mem, signal: signal, position: i, input: input, halt: true}
+				return Amplifier{mem: mem, signal: signal, position: i, input: input, halt: true, relativeBase: relativeBase}
 			case 1:
 				param1 := getParam(mem, i + 1, ops[1], relativeBase)
 				param2 := getParam(mem, i + 2, ops[2], relativeBase)
@@ -154,14 +167,17 @@ func intCode(amp Amplifier) (Amplifier) {
 			case 3:
 				out := getParam(mem, i + 1, ops[1], relativeBase)
 				mem[out], input = input[0], input[1:]
+
 				i += 2
 			case 4:
 				out := getParam(mem, i + 1, ops[1], relativeBase)
 				signal = mem[out]
-				return Amplifier{mem: mem, signal: signal, position: i + 2, input: input}
+
+				return Amplifier{mem: mem, signal: signal, position: i + 2, input: input, relativeBase: relativeBase}
 			case 5:
 				param1 := getParam(mem, i + 1, ops[1], relativeBase)
 				param2 := getParam(mem, i + 2, ops[2], relativeBase)
+
 				if mem[param1] != 0 {
 					i = mem[param2]
 				} else {
@@ -170,6 +186,7 @@ func intCode(amp Amplifier) (Amplifier) {
 			case 6:
 				param1 := getParam(mem, i + 1, ops[1], relativeBase)
 				param2 := getParam(mem, i + 2, ops[2], relativeBase)
+
 				if mem[param1] == 0 {
 					i = mem[param2]
 				} else {
@@ -179,6 +196,7 @@ func intCode(amp Amplifier) (Amplifier) {
 				param1 := getParam(mem, i + 1, ops[1], relativeBase)
 				param2 := getParam(mem, i + 2, ops[2], relativeBase)
 				out := getParam(mem, i + 3, ops[3], relativeBase)
+
 				if mem[param1] < mem[param2] {
 					mem[out] = 1
 				} else {
@@ -189,6 +207,7 @@ func intCode(amp Amplifier) (Amplifier) {
 				param1 := getParam(mem, i + 1, ops[1], relativeBase)
 				param2 := getParam(mem, i + 2, ops[2], relativeBase)
 				out := getParam(mem, i + 3, ops[3], relativeBase)
+
 				if mem[param1] == mem[param2] {
 					mem[out] = 1
 				} else {
@@ -204,7 +223,7 @@ func intCode(amp Amplifier) (Amplifier) {
 				panic("Invalid op")
 		}
 	}
-	return Amplifier{mem: mem, signal: signal, position: i, input: input, halt: true}
+	return Amplifier{mem: mem, signal: signal, position: i, input: input, halt: true, relativeBase: relativeBase}
 }
 
 func readInput(filename string) ([]string, error) {
@@ -235,3 +254,4 @@ func inputToInt(input string) ([]int, error) {
 	}
 	return out, nil
 }
+
