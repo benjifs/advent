@@ -19,11 +19,46 @@ func main() {
 		moons = append(moons, parseMoon(line))
 	}
 
-	fmt.Println("pt1", runSimulation(moons, 1000))
+	fmt.Println("pt1", runNSimulations(moons, 1000))
+	fmt.Println("pt2", runSimulations(moons))
 }
 
-func runSimulation(moons []Moon, steps int) (int) {
-	for i := 1; i <= steps; i++ {
+func runSimulations(moons []Moon) (int) {
+	xs := make(map[string]bool)
+	ys := make(map[string]bool)
+	zs := make(map[string]bool)
+	matched := [3]int{0, 0, 0}
+
+	for i := 0; matched[0] == 0 || matched[1] == 0 || matched[2] == 0; i++ {
+		keys := getKeys(moons)
+
+		if matched[0] == 0 && xs[keys[0]] {
+			matched[0] = i
+		}
+		if matched[1] == 0 && ys[keys[1]] {
+			matched[1] = i
+		}
+		if matched[2] == 0 && zs[keys[2]] {
+			matched[2] = i
+		}
+		xs[keys[0]] = true
+		ys[keys[1]] = true
+		zs[keys[2]] = true
+
+		moons = simulate(moons)
+	}
+	return lcm(lcm(matched[0], matched[1]), matched[2])
+}
+
+func getKeys(moons []Moon) ([]string) {
+	x := fmt.Sprintf("%d:%d %d:%d %d:%d %d:%d", moons[0].pos.x, moons[0].vel.x, moons[1].pos.x, moons[1].vel.x, moons[2].pos.x, moons[2].vel.x, moons[3].pos.x, moons[3].vel.x)
+	y := fmt.Sprintf("%d:%d %d:%d %d:%d %d:%d", moons[0].pos.y, moons[0].vel.y, moons[1].pos.y, moons[1].vel.y, moons[2].pos.y, moons[2].vel.y, moons[3].pos.y, moons[3].vel.y)
+	z := fmt.Sprintf("%d:%d %d:%d %d:%d %d:%d", moons[0].pos.z, moons[0].vel.z, moons[1].pos.z, moons[1].vel.z, moons[2].pos.z, moons[2].vel.z, moons[3].pos.z, moons[3].vel.z)
+	return []string{x, y, z}
+}
+
+func runNSimulations(moons []Moon, n int) (int) {
+	for i := 1; i <= n; i++ {
 		moons = simulate(moons)
 	}
 	total := 0
@@ -76,16 +111,8 @@ type Moon struct {
 	vel Point
 }
 
-func (m Moon) getPotentialEnergy() (int) {
-	return m.pos.getEnergy()
-}
-
-func (m Moon) getKineticEnergy() (int) {
-	return m.vel.getEnergy()
-}
-
 func (m Moon) getTotalEnergy() (int) {
-	return m.getPotentialEnergy() * m.getKineticEnergy()
+	return m.pos.getEnergy() * m.vel.getEnergy()
 }
 
 func (m *Moon) addVelocity() {
@@ -125,7 +152,6 @@ func readInput(filename string) ([]string, error) {
 	for scanner.Scan() {
 		input = append(input, scanner.Text())
 	}
-
 	return input, nil
 }
 
@@ -136,3 +162,13 @@ func abs(a int) (int) {
 	return a
 }
 
+func gcd(a, b int) (int) {
+	for b != 0 {
+		a, b = b, a % b
+	}
+	return a
+}
+
+func lcm(a, b int) (int) {
+	return a / gcd(a, b) * b
+}
