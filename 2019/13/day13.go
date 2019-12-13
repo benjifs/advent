@@ -26,12 +26,21 @@ func main() {
 		input = append(input, 0)
 	}
 
-	fmt.Println("pt1:", countBlocks(startGame(input)))
-	drawGrid(startGame(input))
+	game := Game{}
+	game.start(input)
+
+	fmt.Println("pt1:", game.countBlocks())
+
+	game.draw()
 }
 
-func countBlocks(grid map[Point]int) (blocks int) {
-	for _, val := range grid {
+type Game struct {
+	screen map[Point]int
+	score int
+}
+
+func (game Game) countBlocks() (blocks int) {
+	for _, val := range game.screen {
 		if val == 2 {
 			blocks++
 		}
@@ -39,11 +48,11 @@ func countBlocks(grid map[Point]int) (blocks int) {
 	return blocks
 }
 
-func drawGrid(grid map[Point]int) {
+func (game Game) draw() {
 	for y := 0; y < 20; y++ {
 		for x := 0; x < 100; x++ {
 			char := " "
-			switch grid[Point{x, y}] {
+			switch game.screen[Point{x, y}] {
 				case 1:
 					char = "█"
 				case 2:
@@ -59,9 +68,12 @@ func drawGrid(grid map[Point]int) {
 	}
 }
 
-func startGame(input []int) (map[Point]int) {
+func (game *Game) start(input []int) {
 	amp := Amplifier{mem: input}
-	grid := make(map[Point]int)
+
+	if game.screen == nil {
+		game.screen = make(map[Point]int)
+	}
 	for {
 		if amp.halt {
 			break
@@ -76,9 +88,8 @@ func startGame(input []int) (map[Point]int) {
 		amp = intCode(amp)
 		tile := amp.signal
 
-		grid[Point{x, y}] = tile
+		game.screen[Point{x, y}] = tile
 	}
-	return grid
 }
 
 func getOP(code int) ([]int) {

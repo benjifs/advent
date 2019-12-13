@@ -12,9 +12,11 @@ func TestCountBlocks(t *testing.T) {
 	grid[Point{1, 0}] = 2
 	grid[Point{2, 0}] = 3
 	grid[Point{0, 2}] = 2
+
+	game := Game{screen: grid}
 	expected := 2
 
-	actual := countBlocks(grid)
+	actual := game.countBlocks()
 	if expected != actual {
 		t.Errorf("Expected: %d - Actual: %d\n", expected, actual)
 	}
