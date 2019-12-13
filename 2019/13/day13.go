@@ -27,6 +27,7 @@ func main() {
 	}
 
 	fmt.Println("pt1:", countBlocks(startGame(input)))
+	drawGrid(startGame(input))
 }
 
 func countBlocks(grid map[Point]int) (blocks int) {
@@ -36,6 +37,26 @@ func countBlocks(grid map[Point]int) (blocks int) {
 		}
 	}
 	return blocks
+}
+
+func drawGrid(grid map[Point]int) {
+	for y := 0; y < 20; y++ {
+		for x := 0; x < 100; x++ {
+			char := " "
+			switch grid[Point{x, y}] {
+				case 1:
+					char = "█"
+				case 2:
+					char = "░"
+				case 3:
+					char = "▀"
+				case 4:
+					char = "●"
+			}
+			fmt.Printf("%v", char)
+		}
+		fmt.Printf("\n")
+	}
 }
 
 func startGame(input []int) (map[Point]int) {
