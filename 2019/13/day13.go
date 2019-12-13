@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"strconv"
+	"time"
 )
 
 const MaxInt = int(^uint(0) >> 1)
@@ -22,20 +23,23 @@ func main() {
 	}
 
 	input, _ := inputToInt(lines[0])
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 100; i++ {
 		input = append(input, 0)
 	}
 
 	game := Game{}
 	game.start(input)
-
 	fmt.Println("pt1:", game.countBlocks())
 
-	game.draw()
+	input[0] = 2
+	game.start(input)
 }
 
 type Game struct {
+	w, h int
 	screen map[Point]int
+	ball Point
+	paddle Point
 	score int
 }
 
@@ -49,8 +53,9 @@ func (game Game) countBlocks() (blocks int) {
 }
 
 func (game Game) draw() {
-	for y := 0; y < 20; y++ {
-		for x := 0; x < 100; x++ {
+	print("\033[H\033[2J")
+	for y := 0; y <= game.h; y++ {
+		for x := 0; x <= game.w; x++ {
 			char := " "
 			switch game.screen[Point{x, y}] {
 				case 1:
@@ -66,6 +71,8 @@ func (game Game) draw() {
 		}
 		fmt.Printf("\n")
 	}
+	fmt.Printf("score: %d\n", game.score)
+	time.Sleep(1 * time.Second / 100)
 }
 
 func (game *Game) start(input []int) {
@@ -74,13 +81,20 @@ func (game *Game) start(input []int) {
 	if game.screen == nil {
 		game.screen = make(map[Point]int)
 	}
+	signal := 0
 	for {
 		if amp.halt {
 			break
 		}
 
-		signal := 2
-		amp.input = append(amp.input, signal)
+		if game.paddle.x < game.ball.x {
+			signal = 1
+		} else if game.paddle.x > game.ball.x {
+			signal = -1
+		} else {
+			signal = 0
+		}
+
 		amp = intCode(amp)
 		x := amp.signal
 		amp = intCode(amp)
@@ -88,7 +102,28 @@ func (game *Game) start(input []int) {
 		amp = intCode(amp)
 		tile := amp.signal
 
-		game.screen[Point{x, y}] = tile
+		if amp.requestInput {
+			amp.input = append(amp.input, signal)
+			game.draw()
+		}
+
+		if x == -1 && y == 0 {
+			game.score = tile
+		} else {
+			if tile == 3 {
+				game.paddle = Point{x, y}
+			} else if tile == 4 {
+				game.ball = Point{x, y}
+			}
+			game.screen[Point{x, y}] = tile
+		}
+
+		if x > game.w {
+			game.w = x
+		}
+		if y > game.h {
+			game.h = y
+		}
 	}
 }
 
@@ -118,6 +153,8 @@ type Amplifier struct {
 	input []int
 	halt bool
 	relativeBase int
+
+	requestInput bool
 }
 
 func intCode(amp Amplifier) (Amplifier) {
@@ -148,6 +185,9 @@ func intCode(amp Amplifier) (Amplifier) {
 				i += 4
 			case 3:
 				out := getParam(mem, i + 1, ops[1], relativeBase)
+				if len(input) == 0 {
+					return Amplifier{mem: mem, position: i, signal: signal, relativeBase: relativeBase, requestInput: true}
+				}
 				mem[out], input = input[0], input[1:]
 
 				i += 2
