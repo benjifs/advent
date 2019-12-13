@@ -28,11 +28,11 @@ func main() {
 	}
 
 	game := Game{}
-	game.start(input)
+	game.start(input, false)
 	fmt.Println("pt1:", game.countBlocks())
 
 	input[0] = 2
-	game.start(input)
+	game.start(input, true)
 }
 
 type Game struct {
@@ -58,73 +58,88 @@ func (game Game) draw() {
 		for x := 0; x <= game.w; x++ {
 			char := " "
 			switch game.screen[Point{x, y}] {
-				case 1:
-					char = "█"
-				case 2:
-					char = "░"
-				case 3:
-					char = "▀"
-				case 4:
-					char = "●"
+			case 1:
+				char = "█"
+			case 2:
+				char = "░"
+			case 3:
+				char = "▀"
+			case 4:
+				char = "●"
 			}
 			fmt.Printf("%v", char)
 		}
 		fmt.Printf("\n")
 	}
 	fmt.Printf("score: %d\n", game.score)
-	time.Sleep(1 * time.Second / 100)
+	time.Sleep(1 * time.Second / 50)
 }
 
-func (game *Game) start(input []int) {
-	amp := Amplifier{mem: input}
+func (game *Game) start(input []int, render bool) {
+	amp := Amplifier{mem: input, in: make(chan int), out: make(chan int), halt: make(chan bool)}
 
 	if game.screen == nil {
 		game.screen = make(map[Point]int)
 	}
+	
+	go func() {
+		amp.run()
+		close(amp.halt)	
+	}()
+
 	signal := 0
-	for {
-		if amp.halt {
-			break
-		}
+	running := true
+	for running {
+		select {
+			case <- amp.halt:
+				running = false
+			case amp.in <- signal:
+				if render {
+					game.draw()
+				}
+			case x := <- amp.out:
+				y := <- amp.out
+				tile := <- amp.out
 
-		if game.paddle.x < game.ball.x {
-			signal = 1
-		} else if game.paddle.x > game.ball.x {
-			signal = -1
-		} else {
-			signal = 0
-		}
-
-		amp = intCode(amp)
-		x := amp.signal
-		amp = intCode(amp)
-		y := amp.signal
-		amp = intCode(amp)
-		tile := amp.signal
-
-		if amp.requestInput {
-			amp.input = append(amp.input, signal)
-			game.draw()
-		}
-
-		if x == -1 && y == 0 {
-			game.score = tile
-		} else {
-			if tile == 3 {
-				game.paddle = Point{x, y}
-			} else if tile == 4 {
-				game.ball = Point{x, y}
-			}
-			game.screen[Point{x, y}] = tile
-		}
-
-		if x > game.w {
-			game.w = x
-		}
-		if y > game.h {
-			game.h = y
+				if x == -1 && y == 0 {
+					game.score = tile
+				} else {
+					if tile == 3 {
+						game.paddle = Point{x, y}
+					} else if tile == 4 {
+						game.ball = Point{x, y}
+						if game.paddle.x < game.ball.x {
+							signal = 1
+						} else if game.paddle.x > game.ball.x {
+							signal = -1
+						} else {
+							signal = 0
+						}
+					}
+					game.screen[Point{x, y}] = tile
+				}
+				if x > game.w {
+					game.w = x
+				}
+				if y > game.h {
+					game.h = y
+				}
 		}
 	}
+	if render {
+		game.draw()
+	}
+	close(amp.in)
+	close(amp.out)
+}
+
+type Amplifier struct {
+	mem []int
+	relativeBase int
+
+	in chan int
+	out chan int
+	halt chan bool
 }
 
 func getOP(code int) ([]int) {
@@ -136,116 +151,95 @@ func getOP(code int) ([]int) {
 	return []int{op, param1, param2, param3}
 }
 
-func getParam(mem []int, index int, mode int, relativeBase int) (int) {
+func (amp Amplifier) getParam(index int, mode int) (int) {
 	if mode == 0 {
-		return mem[index]
+		return amp.mem[index]
 	}
 	if mode == 2 {
-		return mem[index] + relativeBase
+		return amp.mem[index] + amp.relativeBase
 	}
 	return index
 }
 
-type Amplifier struct {
-	mem []int
-	position int
-	signal int
-	input []int
-	halt bool
-	relativeBase int
-
-	requestInput bool
-}
-
-func intCode(amp Amplifier) (Amplifier) {
-	i := amp.position
-	mem := amp.mem
-	input := amp.input
-	signal := amp.signal
-	relativeBase := amp.relativeBase
-
-	for i < len(mem) {
-		ops := getOP(mem[i])
+func (amp *Amplifier) run() {
+	i := 0
+	for {
+		ops := getOP(amp.mem[i])
 
 		op := ops[0]
 		switch op {
 			case 99:
-				return Amplifier{mem: mem, signal: signal, position: i, input: input, halt: true, relativeBase: relativeBase}
+				amp.halt <- true
+				return
 			case 1:
-				param1 := getParam(mem, i + 1, ops[1], relativeBase)
-				param2 := getParam(mem, i + 2, ops[2], relativeBase)
-				out := getParam(mem, i + 3, ops[3], relativeBase)
-				mem[out] = mem[param1] + mem[param2]
+				param1 := amp.getParam(i + 1, ops[1])
+				param2 := amp.getParam(i + 2, ops[2])
+				out := amp.getParam(i + 3, ops[3])
+				amp.mem[out] = amp.mem[param1] + amp.mem[param2]
 				i += 4
 			case 2:
-				param1 := getParam(mem, i + 1, ops[1], relativeBase)
-				param2 := getParam(mem, i + 2, ops[2], relativeBase)
-				out := getParam(mem, i + 3, ops[3], relativeBase)
-				mem[out] = mem[param1] * mem[param2]
+				param1 := amp.getParam(i + 1, ops[1])
+				param2 := amp.getParam(i + 2, ops[2])
+				out := amp.getParam(i + 3, ops[3])
+				amp.mem[out] = amp.mem[param1] * amp.mem[param2]
 				i += 4
 			case 3:
-				out := getParam(mem, i + 1, ops[1], relativeBase)
-				if len(input) == 0 {
-					return Amplifier{mem: mem, position: i, signal: signal, relativeBase: relativeBase, requestInput: true}
-				}
-				mem[out], input = input[0], input[1:]
-
+				out := amp.getParam(i + 1, ops[1])
+				amp.mem[out] = <- amp.in
 				i += 2
 			case 4:
-				out := getParam(mem, i + 1, ops[1], relativeBase)
-				signal = mem[out]
-
-				return Amplifier{mem: mem, signal: signal, position: i + 2, input: input, relativeBase: relativeBase}
+				out := amp.getParam(i + 1, ops[1])
+				amp.out <- amp.mem[out]
+				i += 2
 			case 5:
-				param1 := getParam(mem, i + 1, ops[1], relativeBase)
-				param2 := getParam(mem, i + 2, ops[2], relativeBase)
+				param1 := amp.getParam(i + 1, ops[1])
+				param2 := amp.getParam(i + 2, ops[2])
 
-				if mem[param1] != 0 {
-					i = mem[param2]
+				if amp.mem[param1] != 0 {
+					i = amp.mem[param2]
 				} else {
 					i += 3
 				}
 			case 6:
-				param1 := getParam(mem, i + 1, ops[1], relativeBase)
-				param2 := getParam(mem, i + 2, ops[2], relativeBase)
+				param1 := amp.getParam(i + 1, ops[1])
+				param2 := amp.getParam(i + 2, ops[2])
 
-				if mem[param1] == 0 {
-					i = mem[param2]
+				if amp.mem[param1] == 0 {
+					i = amp.mem[param2]
 				} else {
 					i += 3
 				}
 			case 7:
-				param1 := getParam(mem, i + 1, ops[1], relativeBase)
-				param2 := getParam(mem, i + 2, ops[2], relativeBase)
-				out := getParam(mem, i + 3, ops[3], relativeBase)
+				param1 := amp.getParam(i + 1, ops[1])
+				param2 := amp.getParam(i + 2, ops[2])
+				out := amp.getParam(i + 3, ops[3])
 
-				if mem[param1] < mem[param2] {
-					mem[out] = 1
+				if amp.mem[param1] < amp.mem[param2] {
+					amp.mem[out] = 1
 				} else {
-					mem[out] = 0
+					amp.mem[out] = 0
 				}
 				i += 4
 			case 8:
-				param1 := getParam(mem, i + 1, ops[1], relativeBase)
-				param2 := getParam(mem, i + 2, ops[2], relativeBase)
-				out := getParam(mem, i + 3, ops[3], relativeBase)
+				param1 := amp.getParam(i + 1, ops[1])
+				param2 := amp.getParam(i + 2, ops[2])
+				out := amp.getParam(i + 3, ops[3])
 
-				if mem[param1] == mem[param2] {
-					mem[out] = 1
+				if amp.mem[param1] == amp.mem[param2] {
+					amp.mem[out] = 1
 				} else {
-					mem[out] = 0
+					amp.mem[out] = 0
 				}
 				i += 4
 			case 9:
-				param1 := getParam(mem, i + 1, ops[1], relativeBase)
-				relativeBase += mem[param1]
+				param1 := amp.getParam(i + 1, ops[1])
+				amp.relativeBase += amp.mem[param1]
 				i += 2
 			default:
 				fmt.Println(ops)
 				panic("Invalid op")
 		}
 	}
-	return Amplifier{mem: mem, signal: signal, position: i, input: input, halt: true, relativeBase: relativeBase}
 }
 
 func readInput(filename string) ([]string, error) {
