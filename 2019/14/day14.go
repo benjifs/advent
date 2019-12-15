@@ -6,11 +6,40 @@ import (
 	"os"
 	"strings"
 	"strconv"
+	"math"
 )
 
 func main() {
+	input, err := readInput("input.txt")
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Println("pt1")
+	reactions := parseInput(input)
+	fmt.Println("pt1:", getMinimumOre(reactions))
+}
+
+func getMinimumOre(reactions map[string]Reaction) (int) {
+	extra := map[string]int{}
+	need := map[string]int{}
+	need["FUEL"] = 1
+
+	for len(need) > 1 || need["FUEL"] != 0 {
+		for key, value := range need {
+			if key == "ORE" {
+				continue
+			}
+			reaction := reactions[key]
+			n := int(math.Ceil(float64(value - extra[key]) / float64(reaction.result.quantity)))
+			for _, value := range reaction.combinations {
+				need[value.name] += n * value.quantity
+			}
+			extra[key] += n * reaction.result.quantity - value
+			delete(need, key)
+		}
+	}
+
+	return need["ORE"]
 }
 
 type Chemical struct {
@@ -20,20 +49,21 @@ type Chemical struct {
 
 type Reaction struct {
 	result Chemical
-	combination []Chemical
+	combinations []Chemical
 }
 
-func parseInput(input []string) ([]Reaction) {
-	reactions := []Reaction{}
+func parseInput(input []string) (map[string]Reaction) {
+	reactions := make(map[string]Reaction)
 
 	for _, line := range input {
-		reactions = append(reactions, parseReaction(line))
+		reaction := parseReaction(line)
+		reactions[reaction.result.name] = reaction
 	}
 
 	return reactions
 }
 
-func parseReaction(line string) (Reaction) {
+func parseReaction(line string) (reaction Reaction) {
 	split := strings.Split(line, " => ")
 	combinations := strings.Split(split[0], ", ")
 
@@ -42,8 +72,16 @@ func parseReaction(line string) (Reaction) {
 		chemicals = append(chemicals, parseChemical(combination))
 	}
 	result := parseChemical(split[1])
-
 	return Reaction{result, chemicals}
+}
+
+func parseChem(chem string) (string, int) {
+	chemical := strings.Split(chem, " ")
+	quantity, err := strconv.Atoi(chemical[0])
+	if err != nil {
+		panic(err)
+	}
+	return chemical[1], quantity
 }
 
 func parseChemical(chem string) (Chemical) {
@@ -71,17 +109,5 @@ func readInput(filename string) ([]string, error) {
 	}
 
 	return input, nil
-}
-
-func inputToInt(input string) ([]int, error) {
-	var out []int
-	for _, val := range strings.Split(input, ",") {
-		num, err := strconv.Atoi(val)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, num)
-	}
-	return out, nil
 }
 
