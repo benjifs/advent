@@ -43,7 +43,40 @@ func TestPart1Sample1(t *testing.T) {
 	expected := 31
 
 	parsed := parseInput(lines)
-	actual := getMinimumOre(parsed)
+	actual := getMinimumOre(parsed, 1)
+	if expected != actual {
+		t.Errorf("Expected: %d - Actual: %d\n", expected, actual)
+	}
+}
+
+func TestPart2Input1(t *testing.T) {
+	input, _ := readInput("test1.txt")
+	reactions := parseInput(input)
+	expected := 82892753
+
+	actual := oreToFuel(reactions, 0, 100000000, 1000000000000)
+	if expected != actual {
+		t.Errorf("Expected: %d - Actual: %d\n", expected, actual)
+	}
+}
+
+func TestPart2Input2(t *testing.T) {
+	input, _ := readInput("test2.txt")
+	reactions := parseInput(input)
+	expected := 5586022
+
+	actual := oreToFuel(reactions, 0, 100000000, 1000000000000)
+	if expected != actual {
+		t.Errorf("Expected: %d - Actual: %d\n", expected, actual)
+	}
+}
+
+func TestPart2Input3(t *testing.T) {
+	input, _ := readInput("test3.txt")
+	reactions := parseInput(input)
+	expected := 460664
+
+	actual := oreToFuel(reactions, 0, 100000000, 1000000000000)
 	if expected != actual {
 		t.Errorf("Expected: %d - Actual: %d\n", expected, actual)
 	}
