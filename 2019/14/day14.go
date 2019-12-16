@@ -16,13 +16,26 @@ func main() {
 	}
 
 	reactions := parseInput(input)
-	fmt.Println("pt1:", getMinimumOre(reactions))
+	fmt.Println("pt1:", getMinimumOre(reactions, 1))
+	fmt.Println("pt2:", oreToFuel(reactions, 0, 100000000, 1000000000000))
 }
 
-func getMinimumOre(reactions map[string]Reaction) (int) {
+func oreToFuel(reactions map[string]Reaction, min, max, result int) (int) {
+	if min + 1 >= max {
+		return min
+	}
+	fuel := (max + min) / 2
+	minOre := getMinimumOre(reactions, fuel)
+	if minOre < result {
+		return oreToFuel(reactions, fuel, max, result)
+	}
+	return oreToFuel(reactions, min, fuel, result)
+}
+
+func getMinimumOre(reactions map[string]Reaction, fuel int) (int) {
 	extra := map[string]int{}
 	need := map[string]int{}
-	need["FUEL"] = 1
+	need["FUEL"] = fuel
 
 	for len(need) > 1 || need["FUEL"] != 0 {
 		for key, value := range need {
@@ -38,7 +51,6 @@ func getMinimumOre(reactions map[string]Reaction) (int) {
 			delete(need, key)
 		}
 	}
-
 	return need["ORE"]
 }
 
