@@ -64,16 +64,14 @@ func (game Game) draw() {
 	print("\x1b[2;0H")
 	for y := game.min.y; y <= game.max.y; y++ {
 		for x := game.min.x; x <= game.max.x; x++ {
-			char := " "
+			char := "\x1b[0m "
 			switch game.screen[Point{x, y}] {
 			case 1:
-				char = "█"
+				char = "\x1b[0m█"
 			case 2:
-				char = "░"
-			case 3:
-				char = "▀"
-			case 4:
-				char = "●"
+				char = "\x1b[40m░"
+			case 5:
+				char = "\x1b[45m░"
 			}
 			fmt.Printf("%v", char)
 		}
@@ -119,7 +117,7 @@ func (game *Game) start(input []int, render bool) {
 
 		if out == 0 {
 			game.addPoint(look, 1)
-			in = turn(in, true)
+			in = turn(in, false)
 		} else if out == 1 || out == 2 {
 			game.pos = look
 
@@ -131,7 +129,7 @@ func (game *Game) start(input []int, render bool) {
 			}
 			if out == 1 {
 				game.addPoint(game.pos, 2)
-				in = turn(in, false)
+				in = turn(in, true)
 			} else if out == 2 {
 				game.addPoint(game.pos, 4)
 				break
@@ -141,9 +139,46 @@ func (game *Game) start(input []int, render bool) {
 			game.draw()
 		}
 	}
+	if render {
+		game.draw()
+	}
 	fmt.Println("pt1:", dist[game.pos])
+	fmt.Println("pt2:", game.fill(render))
+
 	close(amp.in)
 	close(amp.out)
+}
+
+func (game *Game) fill(render bool) (step int) {
+	game.addPoint(game.pos, 5)
+	next := []Point{game.pos}
+
+	for step = 0; len(next) > 0; step++ {
+		neighbors := make([]Point, len(next))
+		copy(neighbors, next)
+		next = []Point{}
+		for _, neighbor := range neighbors {
+			if game.screen[neighbor] == 2 || game.screen[neighbor] == 5 {
+				game.addPoint(neighbor, 5)
+				next = append(next, game.getNeighbors(neighbor)...)
+			}
+		}
+		if render {
+			game.draw()
+		}
+	}
+	return step - 1
+}
+
+func (game *Game) getNeighbors(point Point) (neighbors []Point) {
+	x, y := point.x, point.y
+	points := []Point{Point{x + 1, y}, Point{x - 1, y}, Point{x, y + 1}, Point{x, y - 1}}
+	for _, point := range points {
+		if game.screen[point] == 2 {
+			neighbors = append(neighbors, point)
+		}
+	}
+	return neighbors
 }
 
 type Amplifier struct {
