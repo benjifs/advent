@@ -16,15 +16,30 @@ func main() {
 	input, _ := inputToInt(lines[0])
 
 	phases := doNPhases(input, []int{0, 1, 0, -1}, 100)
-	fmt.Println("pt1:", getNDigits(phases, 8))
+	fmt.Println("pt1:", sliceToString(phases[:8]))
+	fmt.Println("pt2:", getSignal(input))
 }
 
-func getNDigits(in []int, n int) (string) {
-	out := ""
-	for i := 0; i < n; i++ {
-		out += fmt.Sprintf("%d", in[i])
+func getSignal(in []int) (string) {
+	offset, _ := strconv.Atoi(sliceToString(in[:7]))
+
+	input := make([]int, len(in) * 10000)
+	for i := 0; i < 10000; i++ {
+		for j, char := range in {
+			input[j + len(in) * i] = char
+		}
 	}
-	return out
+
+	signal := input[offset:len(input)]
+	for i := 0; i < 100; i++ {
+		sum := 0
+		for j := len(signal) - 1; j >= 0; j-- {
+			sum += signal[j]
+			signal[j] = abs(sum % 10)
+		}
+	}
+
+	return sliceToString(signal[:8])
 }
 
 func doNPhases(in, pattern []int, n int) ([]int) {
@@ -57,6 +72,15 @@ func abs(x int) (int) {
 	}
 	return x
 }
+
+func sliceToString(slice []int) (string) {
+	out := ""
+	for _, n := range slice {
+		out += fmt.Sprintf("%d", n)
+	}
+	return out
+}
+
 
 func readInput(filename string) ([]string, error) {
 	file, err := os.Open(filename)
