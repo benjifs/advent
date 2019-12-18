@@ -61,7 +61,7 @@ func (game *Game) addPoint(point Point, tile int) {
 }
 
 func (game Game) draw() {
-	print("\x1b[2;0H")
+	fmt.Printf("\x1b[2;0H")
 	for y := game.min.y; y <= game.max.y; y++ {
 		for x := game.min.x; x <= game.max.x; x++ {
 			char := "\x1b[0m "
